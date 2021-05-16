@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn Any + Send + 'static>> {
 
     (0..100).for_each({
         let v = vals.clone();
+        let mut rnd = rnd.clone();
         move |_| {
             v.write()
                 .map_or_else(|err| println!("{}", err), |mut smth| smth.push(rnd.gen()));
@@ -47,6 +48,18 @@ fn main() -> Result<(), Box<dyn Any + Send + 'static>> {
         |err| println!("{}", err),
         |locked| locked.iter().for_each(|v| println!("{}", v)),
     );
+
+    let mut matrix: Vec<Vec<isize>> = vec![vec![0; 10]; 10];
+
+    matrix.iter_mut().for_each(|line| {
+        line.iter_mut().for_each(|val| *val = rnd.gen::<isize>());
+        println!();
+    });
+
+    matrix.iter().for_each(|line| {
+        line.iter().for_each(|val| print!(" {} ", val));
+        println!();
+    });
 
     Ok(())
 }
