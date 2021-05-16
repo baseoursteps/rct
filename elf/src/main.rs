@@ -10,15 +10,16 @@ use memmap2::Mmap;
 fn main() -> error::Result<()> {
     let arg = env::args()
         .nth(1)
-        .or(env::args().nth(0))
+        .or_else(|| env::args().next())
         .ok_or(elErr::None)?;
 
-    let myself = File::open(&arg);
-
-    let map = unsafe { memmap2::Mmap::map(&myself?)? };
+    let map = unsafe { memmap2::Mmap::map(&File::open(&arg)?)? };
 
     if map.len() < mem::size_of::<Elf64_Ehdr>() {
-        Err(elErr::Misc("File is smalled than elf header"))?
+        return Err(elErr::Misc(format!(
+            "File {} is smaller than elf header",
+            arg
+        )));
     }
 
     let hdr = unsafe {
@@ -28,7 +29,7 @@ fn main() -> error::Result<()> {
     };
 
     if hdr.e_ident[..4] != ELFMAG[..4] {
-        Err(elErr::Misc("File is not an elf"))?
+        return Err(elErr::Misc(format!("File {} is not an elf", arg)));
     }
     println!("{:#?}", hdr);
 
@@ -50,6 +51,7 @@ fn main() -> error::Result<()> {
         let begin = header.sh_offset as usize;
         let count = header.sh_size as usize;
         let end = begin + count;
+        // first byte is always 0
         slice::from_raw_parts(bytes[begin + 1..end].as_ptr() as *const u8, count)
             .split(|val| *val == 0)
             .filter(|s| !s.is_empty())

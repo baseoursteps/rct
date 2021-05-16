@@ -1,14 +1,16 @@
 pub type Result<T> = std::result::Result<T, Error>;
 
+use std::io::Error as ioErr;
+
 #[derive(Debug)]
 pub enum Error {
-    Io(std::io::Error),
+    Io(ioErr),
     None,
-    Misc(&'static str),
+    Misc(String),
 }
 
-impl From<std::io::Error> for Error {
-    fn from(error: std::io::Error) -> Self {
+impl From<ioErr> for Error {
+    fn from(error: ioErr) -> Self {
         Error::Io(error)
     }
 }
