@@ -30,6 +30,7 @@ fn main() -> error::Result<()> {
     if hdr.e_ident[..4] != ELFMAG[..4] {
         Err(elErr::Misc("File is not an elf"))?
     }
+    println!("{:#?}", hdr);
 
     // get section headers
     let sects = unsafe {
@@ -55,19 +56,15 @@ fn main() -> error::Result<()> {
             .map(|s| std::str::from_utf8_unchecked(s))
     };
 
-    //profit
-    println!("{:#?}", hdr);
-
-    // find the ones
-    for (i, s) in sects.iter().enumerate() {
-        if s.sh_type == SHT_STRTAB {
-            println!("Section #{} {:#?} has the following strings:", i, s);
-
-            let strs = read_strs(&map, s);
-
-            strs.for_each(|val| println!("{}", val));
-        }
-    }
+    // find the ones holding symbol strings
+    sects
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.sh_type == SHT_STRTAB)
+        .for_each(|(i, s)| {
+            println!("Section {} {:#?} has the following strings:", i, s);
+            read_strs(&map, s).for_each(|val| println!("{}", val));
+        });
 
     Ok(())
 }
